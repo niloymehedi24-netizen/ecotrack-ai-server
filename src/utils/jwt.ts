@@ -15,9 +15,5 @@ export const createToken = (payload: { userId: string; role: string }) => {
 };
 
 export const verifyToken = (token: string) => {
-  return jwt.verify(
-    token,
-
-    ENV.JWT_SECRET,
-  );
+  return jwt.verify(token, ENV.JWT_SECRET);
 };
