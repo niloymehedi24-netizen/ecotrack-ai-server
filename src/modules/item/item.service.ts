@@ -21,25 +21,69 @@ export const createItem = async (data: ItemInput, createdBy: string) => {
 export const getAllItems = async (
   search?: string,
   category?: string,
+  minPrice?: number,
+  maxPrice?: number,
+  sort?: string,
   page: number = 1,
   limit: number = 6,
 ) => {
-  // Properly typed MongoDB filter
   const query: Filter<Item> = {};
 
+  // Search
   if (search) {
-    query.title = { $regex: search, $options: "i" };
+    query.title = {
+      $regex: search,
+      $options: "i",
+    };
   }
+
+  // Category Filter
 
   if (category && category !== "All") {
     query.category = category as Item["category"];
   }
 
+  // Price Filter
+
+  if (minPrice !== undefined || maxPrice !== undefined) {
+    query.price = {};
+
+    if (minPrice !== undefined) {
+      query.price.$gte = minPrice;
+    }
+
+    if (maxPrice !== undefined) {
+      query.price.$lte = maxPrice;
+    }
+  }
+
   const skip = (page - 1) * limit;
+
+  let sortOption: any = {
+    createdAt: -1,
+  };
+
+  if (sort === "price-low") {
+    sortOption = {
+      price: 1,
+    };
+  }
+
+  if (sort === "price-high") {
+    sortOption = {
+      price: -1,
+    };
+  }
+
+  if (sort === "name") {
+    sortOption = {
+      title: 1,
+    };
+  }
 
   const items = await itemsCollection()
     .find(query)
-    .sort({ createdAt: -1 })
+    .sort(sortOption)
     .skip(skip)
     .limit(limit)
     .toArray();
@@ -48,8 +92,11 @@ export const getAllItems = async (
 
   return {
     items,
+
     total,
+
     page,
+
     totalPages: Math.ceil(total / limit),
   };
 };

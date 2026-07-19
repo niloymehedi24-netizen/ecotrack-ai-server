@@ -18,4 +18,5 @@ export const ENV = {
   MONGODB_URI: getEnvVar("MONGODB_URI"),
   JWT_SECRET: getEnvVar("JWT_SECRET"),
   CLIENT_URL: getEnvVar("CLIENT_URL"),
+  GEMINI_API_KEY: getEnvVar("GEMINI_API_KEY"),
 } as const;

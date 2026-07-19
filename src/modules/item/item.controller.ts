@@ -44,20 +44,29 @@ export const createItemController = async (req: Request, res: Response) => {
 
 export const getAllItemsController = async (req: Request, res: Response) => {
   try {
-    const { search, category } = req.query;
+    const { search, category, minPrice, maxPrice, sort, page } = req.query;
 
-    const items = await getAllItems(
-      search as string | undefined,
-      category as string | undefined,
+    const result = await getAllItems(
+      search as string,
+
+      category as string,
+
+      minPrice ? Number(minPrice) : undefined,
+
+      maxPrice ? Number(maxPrice) : undefined,
+
+      sort as string,
+
+      page ? Number(page) : 1,
     );
 
-    return res.json({
+    res.json({
       success: true,
 
-      items,
+      ...result,
     });
   } catch (error: unknown) {
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
 
       message: error instanceof Error ? error.message : "Failed to fetch items",
