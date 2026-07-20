@@ -1,12 +1,13 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 
 import { ENV } from "../../config/env.js";
-
 import { aiConversationCollection } from "./ai.collection.js";
 
 import type { AIMessage, AIConversation } from "./ai.types.js";
 
-const genAI = new GoogleGenerativeAI(ENV.GEMINI_API_KEY);
+const groq = new Groq({
+  apiKey: ENV.GROQ_API_KEY,
+});
 
 export const generateAIResponse = async (message: string, userId: string) => {
   const collection = aiConversationCollection();
@@ -15,53 +16,43 @@ export const generateAIResponse = async (message: string, userId: string) => {
     userId,
   });
 
-  const history: AIMessage[] = previousConversation
-    ? previousConversation.messages
-    : [];
+  const history: AIMessage[] = previousConversation?.messages ?? [];
 
-  const conversationText = history
-    .map((msg: AIMessage) => `${msg.role}: ${msg.content}`)
-    .join("\n");
+  const messagesForGroq = [
+    {
+      role: "system" as const,
+      content:
+        "You are EcoTrack AI Assistant. Help users with sustainability, eco-friendly lifestyle, energy saving, waste reduction, and environmental improvement. Give practical, professional, and concise advice.",
+    },
 
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.0-flash",
+    ...history.map((msg) => ({
+      role: msg.role,
+      content: msg.content,
+    })),
+
+    {
+      role: "user" as const,
+      content: message,
+    },
+  ];
+
+  const completion = await groq.chat.completions.create({
+    model: "llama-3.1-8b-instant",
+    messages: messagesForGroq,
+    temperature: 0.7,
+    max_tokens: 500,
   });
 
-  const prompt = `
-You are EcoTrack AI Assistant.
-
-Your job is to help users with:
-- sustainability
-- eco-friendly lifestyle
-- energy saving
-- waste reduction
-- environmental improvement
-
-Previous conversation:
-
-${conversationText}
-
-
-Current user message:
-
-${message}
-
-
-Give practical, professional and concise advice.
-`;
-
-  const result = await model.generateContent(prompt);
-
-  const response = result.response.text();
+  const response =
+    completion.choices[0]?.message?.content ??
+    "Sorry, I could not generate a response.";
 
   const updatedMessages: AIMessage[] = [
     ...history,
-
     {
       role: "user",
       content: message,
     },
-
     {
       role: "assistant",
       content: response,
@@ -69,32 +60,22 @@ Give practical, professional and concise advice.
   ];
 
   await collection.updateOne(
-    {
-      userId,
-    },
-
+    { userId },
     {
       $set: {
         userId,
-
         messages: updatedMessages,
-
         createdAt: new Date(),
       },
     },
-
-    {
-      upsert: true,
-    },
+    { upsert: true },
   );
 
   return response;
 };
 
 export const getAIHistory = async (userId: string) => {
-  const history = await aiConversationCollection().findOne<AIConversation>({
+  return aiConversationCollection().findOne<AIConversation>({
     userId,
   });
-
-  return history;
 };
