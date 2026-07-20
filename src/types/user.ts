@@ -11,5 +11,7 @@ export interface User {
 
   role: "USER" | "ADMIN";
 
+  image?: string;
+
   createdAt: Date;
 }

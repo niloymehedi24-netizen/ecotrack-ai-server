@@ -9,6 +9,8 @@ import { usersCollection } from "./auth.collection.js";
 
 import { createToken } from "../../utils/jwt.js";
 
+import { googleLoginService } from "./google.service.js";
+
 export const registerController = async (req: Request, res: Response) => {
   try {
     const validatedData = registerSchema.parse(req.body);
@@ -67,6 +69,39 @@ export const loginController = async (req: Request, res: Response) => {
     return res.status(400).json({
       success: false,
       message: error instanceof Error ? error.message : "Login failed",
+    });
+  }
+};
+
+export const googleLoginController = async (req: Request, res: Response) => {
+  try {
+    const { credential } = req.body;
+
+    if (!credential) {
+      return res.status(400).json({
+        success: false,
+        message: "Google credential is required",
+      });
+    }
+
+    const result = await googleLoginService(credential);
+
+    res.cookie("token", result.token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.json({
+      success: true,
+      message: "Google login successful",
+      user: result.user,
+    });
+  } catch (error: unknown) {
+    return res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : "Google login failed",
     });
   }
 };

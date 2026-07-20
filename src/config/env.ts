@@ -20,4 +20,5 @@ export const ENV = {
   JWT_SECRET: getEnvVar("JWT_SECRET"),
   CLIENT_URL: getEnvVar("CLIENT_URL"),
   GROQ_API_KEY: getEnvVar("GROQ_API_KEY"),
+  GOOGLE_CLIENT_ID: getEnvVar("GOOGLE_CLIENT_ID"),
 } as const;

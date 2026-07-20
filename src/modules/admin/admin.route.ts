@@ -4,12 +4,12 @@ import {
   usersController,
   analyticsController,
 } from "./admin.controller.js";
-import { verifyToken } from "../../utils/jwt.js";
+import { authenticate } from "../../middlewares/auth.middleware.js";
 import { adminOnly } from "../../middlewares/admin.middleware.js";
 
 const router = Router();
 
-router.use(verifyToken, adminOnly);
+router.use(authenticate, adminOnly);
 
 router.get("/dashboard", dashboardStatsController);
 router.get("/users", usersController);

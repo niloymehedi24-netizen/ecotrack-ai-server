@@ -3,6 +3,7 @@ import { Router } from "express";
 import {
   registerController,
   loginController,
+  googleLoginController,
   logoutController,
   meController,
 } from "./auth.controller.js";
@@ -13,6 +14,8 @@ const router = Router();
 router.post("/register", registerController);
 
 router.post("/login", loginController);
+
+router.post("/google", googleLoginController);
 
 router.post("/logout", logoutController);
 

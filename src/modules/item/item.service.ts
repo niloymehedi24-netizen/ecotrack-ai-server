@@ -25,7 +25,7 @@ export const getAllItems = async (
   maxPrice?: number,
   sort?: string,
   page: number = 1,
-  limit: number = 6,
+  limit: number = 8,
 ) => {
   const query: Filter<Item> = {};
 
