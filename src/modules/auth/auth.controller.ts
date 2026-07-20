@@ -2,19 +2,30 @@ import type { Request, Response } from "express";
 import { ObjectId } from "mongodb";
 
 import { registerUser, loginUser } from "./auth.service.js";
-
 import { registerSchema, loginSchema } from "./auth.validation.js";
-
 import { usersCollection } from "./auth.collection.js";
-
 import { createToken } from "../../utils/jwt.js";
-
 import { googleLoginService } from "./google.service.js";
+
+// Helper to determine environment configuration for cookies
+const isProduction = process.env["NODE_ENV"] === "production";
+
+const cookieOptions = {
+  httpOnly: true,
+  secure: isProduction, // true on Render (HTTPS), false locally (HTTP)
+  sameSite: isProduction ? ("none" as const) : ("lax" as const), // "none" required for cross-site (Vercel <-> Render)
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
+
+const clearCookieOptions = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? ("none" as const) : ("lax" as const),
+};
 
 export const registerController = async (req: Request, res: Response) => {
   try {
     const validatedData = registerSchema.parse(req.body);
-
     const user = await registerUser(validatedData);
 
     const token = createToken({
@@ -22,12 +33,7 @@ export const registerController = async (req: Request, res: Response) => {
       role: user.role,
     });
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: false, // Change to true in production (HTTPS)
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie("token", token, cookieOptions);
 
     return res.status(201).json({
       success: true,
@@ -45,7 +51,6 @@ export const registerController = async (req: Request, res: Response) => {
 export const loginController = async (req: Request, res: Response) => {
   try {
     const validatedData = loginSchema.parse(req.body);
-
     const user = await loginUser(validatedData);
 
     const token = createToken({
@@ -53,12 +58,7 @@ export const loginController = async (req: Request, res: Response) => {
       role: user.role,
     });
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env["NODE_ENV"] === "production",
-      sameSite: "none",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie("token", token, cookieOptions);
 
     return res.json({
       success: true,
@@ -86,12 +86,7 @@ export const googleLoginController = async (req: Request, res: Response) => {
 
     const result = await googleLoginService(credential);
 
-    res.cookie("token", result.token, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie("token", result.token, cookieOptions);
 
     return res.json({
       success: true,
@@ -107,7 +102,7 @@ export const googleLoginController = async (req: Request, res: Response) => {
 };
 
 export const logoutController = (_req: Request, res: Response) => {
-  res.clearCookie("token");
+  res.clearCookie("token", clearCookieOptions);
 
   return res.json({
     success: true,
