@@ -6,8 +6,17 @@ import { ENV } from "./config/env.js";
 
 import { connectDB } from "./config/db.js";
 import router from "./routes/index.js";
+import helmet from "helmet";
 
 const app = express();
+
+app.use(
+  helmet({
+    crossOriginOpenerPolicy: {
+      policy: "unsafe-none",
+    },
+  }),
+);
 
 app.use(
   cors({
